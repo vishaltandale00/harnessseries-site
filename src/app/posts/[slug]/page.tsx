@@ -58,7 +58,6 @@ export default async function PostPage({ params }: PostPageProps) {
                 year: "numeric",
               }).format(new Date(`${post.date}T00:00:00`))}
             </time>
-            <span>{post.draftPath}</span>
           </div>
           <div className="topic-row">
             {post.topics.map((topic) => (
