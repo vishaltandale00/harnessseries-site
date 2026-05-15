@@ -44,11 +44,6 @@ const postMetadata: PostMeta[] = [
         href: "https://arxiv.org/abs/2603.28052",
         kind: "paper",
       },
-      {
-        label: "Pretext source",
-        href: "https://github.com/chenglou/pretext",
-        kind: "source",
-      },
     ],
   },
   {
@@ -92,11 +87,6 @@ const postMetadata: PostMeta[] = [
         label: "Meta IDE workspace mock",
         href: "https://meta-ide-workspace-mocks-20260513.vercel.app/",
         kind: "demo",
-      },
-      {
-        label: "Pretext source",
-        href: "https://github.com/chenglou/pretext",
-        kind: "source",
       },
     ],
   },

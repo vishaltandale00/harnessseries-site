@@ -102,7 +102,8 @@ Expected reference links for v1:
 - Meta-Harness paper: `https://arxiv.org/abs/2603.28052`
 - DocLayer mock: `https://doclayer-one.vercel.app/mocks/`
 - Meta IDE mock: `https://meta-ide-workspace-mocks-20260513.vercel.app/`
-- Pretext source: `https://github.com/chenglou/pretext`
+
+`@chenglou/pretext` should remain an implementation dependency for text layout only. It should not appear as a public article reference unless an article explicitly discusses the library.
 
 ## Quality Bar
 
