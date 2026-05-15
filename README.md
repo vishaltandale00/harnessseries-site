@@ -26,3 +26,5 @@ npm run build
 ## Deployment
 
 The project is configured for Vercel through `vercel.json` and can be deployed as a standard Next.js application.
+
+Production URL: https://harnessseries-site.vercel.app

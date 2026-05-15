@@ -4,3 +4,5 @@ out
 .vercel
 .env*
 *.log
+.playwright-mcp
+harness-*.png
