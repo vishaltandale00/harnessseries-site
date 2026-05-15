@@ -1,17 +1,107 @@
 <section>
-  <p>A harness is the system that turns model intelligence into product behavior. Formally LLM harnesses are defined as “the code that determines what to store, retrieve and show to the model” (Lee et. All). Harnesses are a less derogatory term for GPT wrappers, but were around 10+ years before GPT2 came out. (<a href="https://arxiv.org/html/2603.28052v1#:~:text=Changing%20the%20harness%20around%20a,to%20growing%20interest%20in%20harness">Meta-Harness definition reference</a>) (<a href="https://www.langchain.com/blog/the-anatomy-of-an-agent-harness#:~:text=TLDR%3A%20Agent%20%3D%20Model%20%2B,today%27s%20and%20tomorrow%27s%20agents%20need">LangChain agent harness reference</a>)</p>
-  <p>Systems like google search, instagram and Linkedin are harnesses around the recommendations and ranking algorithm. (<a href="https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/45530.pdf">Google ranking reference</a>)</p>
-  <p>The models underneath the harness are split into many different submodels that are specialized in an array of tasks like: encoding a query to an embedding, retrieving results based on the query plus user preferences, reranking those results to prune the downstream computations, stitching together content based on what's most likely to get the users attention, ranking/auctioning the content given the context of what else would be on the page and what makes the system the most money, and generating a full interface given the finalized set of content. These different submodels using the same embeddings, pass the final hidden layer to later models (like a RNN) and have an intricate harness around them so these systems can generate results in under half a second. These harnesses were called infrastructure and teams of hundreds maintained and improved these harnesses that led the product to be faster, higher quality, more personalized, reduced cost to serve and to increase compliance adherence. The underlying models were not available to the public and the harnesses around them were a major part of the MOAT for these systems. OpenAI changed that paradigm by providing frontier intelligence via an API so anyone can build intelligent systems. This sparked broader discussion on the infrastructure around intelligence leading to people coining the term wrapper and now harnessing it to describe it.</p>
-  <p>Initial LLM based harnesses that caught my eye were Chat GPT, Perplexity, Cursor. They were carefully crafted by a team of humans to give intelligence an interface for people. It became clear that post training a model around harness significantly improves the quality, latency and efficiency of the application and it gave frontier labs the advantage of the smartest models fitting best with that lab's product . A static harness is effective to train on because: the range of user behaviors is usually well understood, on policy interactions with harness are verifiable and the judge doesn’t need to learn a new harness for every evaluation. We can see this in practice with models like GPT 5.3-codex that outperforms Opus 4.5 on coding related tasks even though Opus was larger and scored better on other benchmarks. They can design a harness according to their understanding of the user and then hammer in the behaviors and tools that allow them to hill climb the benchmarks for their harness.</p>
-  <p>From an architecture perspective, GPT uses the next token prediction function to learn the patterns across its training examples and relate that to the work presented to it during inference. Harnesses, like codex or claude code, provide LMs a runtime to execute code, tools to retrieve relevant context and other tools to take actions. These harnesses are improved via software updates downstream of the code their engineering teams maintain and by adding new tools, called skills or plugins now. Besides this the harness is fixed and mostly the same for each user using it.</p>
+  <p class="article-lede">A harness is the system that turns model intelligence into product behavior. Formally, LLM harnesses are &ldquo;the code that determines what to store, retrieve and show to the model&rdquo;<sup><a href="#ref-1">1</a></sup>. The term is a more precise alternative to &ldquo;GPT wrapper,&rdquo; but harnesses around models have existed for more than a decade<sup><a href="#ref-2">2</a></sup>.</p>
+  <details class="formal-lens">
+    <summary><span class="formal-lens-kicker">Formal lens</span><span class="formal-lens-title">A harness as executable composition</span></summary>
+    <div class="formal-lens-body">
+      <div>Let the available models be <code>M = {M_0, ..., M_k}</code>. A harness is an executable composition <code>H_theta = (h_context, h_memory, h_retrieve, h_tool, h_verify, h_ui)</code> whose subcomponents decide what the model can see, remember, call, validate, and render.</div>
+      <pre><code>c_t   = h_context(s_t, tau_&lt;t)
+m_t   = h_model(s_t, tau_&lt;t)
+y_t   = M_{m_t}(c_t)
+a_t   = h_route(y_t, s_t)
+tau_t = tau_&lt;t + {(s_t, c_t, m_t, y_t, a_t)}</code></pre>
+      <div>The product behavior is therefore not a property of <code>M</code> alone. It is the induced policy of the coupled system <code>(H_theta, M)</code>.</div>
+    </div>
+  </details>
+  <h2>Recommendation systems were the first harnesses</h2>
+  <p>Systems like Google search, Instagram, and LinkedIn are harnesses around recommendation and ranking models<sup><a href="#ref-3">3</a></sup>. The models underneath are split into many specialized submodels: encoding a query into an embedding, retrieving results based on the query plus user preferences, reranking those results to prune downstream computation, stitching together content most likely to hold attention, ranking and auctioning that content given the context of what else is on the page, and finally generating an interface around the selected set.</p>
+  <p>These submodels share embeddings, pass hidden layers downstream into later models like RNNs, and sit inside an intricate harness that has to return results in well under a second. Internally they were called infrastructure, and teams of hundreds maintained them to make the product faster, higher quality, more personalized, cheaper to serve, and compliance-safe. The underlying models were proprietary; the harnesses around them were a meaningful piece of the moat. OpenAI changed that paradigm by exposing frontier intelligence through an API, which let anyone build intelligent systems on top &mdash; and turned the surrounding infrastructure into the most interesting layer to discuss.</p>
+  <details class="formal-lens">
+    <summary><span class="formal-lens-kicker">Formal lens</span><span class="formal-lens-title">Recommendation infrastructure as <code>H_rec</code></span></summary>
+    <div class="formal-lens-body">
+      <div>The recommendation stack is an older instance of the same shape: <code>H_rec = h_embed -> h_retrieve -> h_rerank -> h_auction -> h_render</code>. Each stage may call a different model <code>M_i</code>, but the user experiences the composed behavior of the harness.</div>
+      <div>The relevant objective is multi-term: maximize relevance and revenue while satisfying latency, serving cost, policy, and compliance constraints. The moat was not only the private weights; it was the infrastructure that composed many models into one fast product surface.</div>
+    </div>
+  </details>
+  <h2>The static-harness era</h2>
+  <p>The first LLM harnesses that caught my eye were ChatGPT, Perplexity, and Cursor. Each was carefully crafted by a small team to give intelligence an interface for people. It quickly became clear that post-training a model against the harness improved quality, latency, and efficiency, and that frontier labs could win product fit by pairing their smartest model with their own harness. A static harness is effective to train against: the range of user behaviors is well understood, on-policy interactions with the harness are verifiable, and a judge model does not need to learn a new harness for every evaluation. We see this in practice. GPT&nbsp;5.3-codex outperforms Opus&nbsp;4.5 on coding tasks even though Opus is larger and scores better on other benchmarks, because the harness was the target.</p>
+  <p>Architecturally, the model still uses next-token prediction to learn patterns across training examples and applies them at inference. Harnesses like Codex or Claude Code give the model a runtime to execute code, tools to retrieve relevant context, and tools to take action. They are improved by software updates downstream of the engineering team&rsquo;s code and by adding new tools, often called skills or plugins. Beyond that, the harness is fixed and roughly the same for every user.</p>
+  <details class="formal-lens">
+    <summary><span class="formal-lens-kicker">Formal lens</span><span class="formal-lens-title">Why a fixed harness trains well</span></summary>
+    <div class="formal-lens-body">
+      <div>In the static-harness regime, <code>theta</code> is mostly fixed while model weights, system prompts, tools, and post-training data move around it. The optimization target is closer to:</div>
+      <pre><code>max_phi  E[ Q(tau(H_theta, M_phi, x)) ]</code></pre>
+      <div>Because <code>H_theta</code> is stable, training data, on-policy traces, and judge behavior stay comparable across runs. The model can learn the habits of that particular interface: when tools appear, what traces look like, how context is packed, and what counts as a successful terminal state.</div>
+    </div>
+  </details>
+  <h2>Meta-harnesses and per-user evolution</h2>
+  <p>A recent paper on meta-harnesses<sup><a href="#ref-1">1</a></sup> proposes that letting a model optimize the harness around its task leads to better performance. By searching over the harness, viewing prior candidate traces, and proposing new options, the outer loop lets the application improve in quality, token usage, and speed. The harness becomes a set of parameters to optimize, not a fixed surface that only changes with a human in the loop.</p>
+  <p>Autonomously improving harnesses change the paradigm of user-facing applications: from fixed general interfaces with a fringe of customizations, to interfaces that adapt per user. Dynamic per-user harnesses around LLMs have not been widely adopted yet, but this is the area Relayer is moving on quickly. The previous generation of harnesses &mdash; Google, Instagram, and so on &mdash; is a good reference for what personalized harnesses can look like.</p>
+  <details class="formal-lens">
+    <summary><span class="formal-lens-kicker">Formal lens</span><span class="formal-lens-title">Moving search from <code>phi</code> to <code>theta</code></span></summary>
+    <div class="formal-lens-body">
+      <div>A meta-harness treats the harness parameters as the search space. Instead of only asking which model weights <code>phi</code> perform best, it asks which harness <code>theta</code> makes a fixed or changing model system perform best.</div>
+      <pre><code>theta* = argmax_theta E[ Q(tau(H_theta, M, x)) ]
+         - lambda_cost C(H_theta)
+         - lambda_lat  L(H_theta)
+         - lambda_risk R(H_theta)</code></pre>
+      <div>The outer loop proposes candidate harnesses from source code, prior scores, and execution traces. The important shift is that retrieval policy, memory policy, tool routing, validation, and interface shape become optimizable objects.</div>
+    </div>
+  </details>
 </section>
+<figure class="figure-block" id="fig-2" aria-labelledby="fig-2-cap">
+  <svg class="figure-svg" viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A closed loop: user trace feeds quality function which feeds harness evolution and returns to the user">
+    <defs>
+      <marker id="arr-2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+        <path d="M0,0 L7,4.5 L0,9" fill="none" stroke="currentColor" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+    </defs>
+    <g class="figure-svg-row" transform="translate(60, 60)">
+      <rect x="0" y="-22" width="120" height="48" rx="2" fill="none" stroke="currentColor" stroke-width="0.9"/>
+      <text x="60" y="6" text-anchor="middle" class="figure-svg-band-center">user trace</text>
+    </g>
+    <g class="figure-svg-row" transform="translate(260, 60)">
+      <rect x="0" y="-22" width="120" height="48" rx="2" fill="none" stroke="currentColor" stroke-width="0.9"/>
+      <text x="60" y="6" text-anchor="middle" class="figure-svg-band-center">quality function</text>
+    </g>
+    <g class="figure-svg-row" transform="translate(460, 60)">
+      <rect x="0" y="-22" width="120" height="48" rx="2" fill="none" stroke="currentColor" stroke-width="0.9"/>
+      <text x="60" y="6" text-anchor="middle" class="figure-svg-band-center">harness evolution</text>
+    </g>
+    <line x1="180" y1="60" x2="252" y2="60" stroke="currentColor" stroke-width="0.9" marker-end="url(#arr-2)"/>
+    <line x1="380" y1="60" x2="452" y2="60" stroke="currentColor" stroke-width="0.9" marker-end="url(#arr-2)"/>
+    <path d="M520 84 L520 140 L120 140 L120 84" fill="none" stroke="currentColor" stroke-width="0.9" stroke-dasharray="3 3" marker-end="url(#arr-2)"/>
+    <text x="320" y="160" text-anchor="middle" class="figure-svg-flow">trace signals: screenshots &middot; text feedback &middot; timelines &middot; task velocity</text>
+    <text x="320" y="180" text-anchor="middle" class="figure-svg-label-mono">retrieval policy &middot; memory policy &middot; interface shape</text>
+  </svg>
+  <figcaption id="fig-2-cap"><span class="figure-num">Fig.&nbsp;2</span> A dynamic harness treats user traces as the signal it optimizes against. The same loop that ranks feed candidates now rewrites the harness that produced them.</figcaption>
+</figure>
 <section>
-  <p>A recent paper about Meta-harnesses (<a href="https://arxiv.org/abs/2603.28052">https://arxiv.org/abs/2603.28052</a>) proposes that letting a LLM optimize the harness around the task leads to better performance. By searching over the harness, viewing prior candidate traces and proposing new harness options the outer meta-harness loop, LLM application can improve in quality, token usage and speed. This technique allows us to hill-climb quality metrics by treating the harness as a set of parameters that can be optimized rather than a fixed aspect that changes with a human in the loop.</p>
-  <p>Autonomously improving harnesses changes the paradigm of user facing applications from fixed general interfaces with a set of customizations to adapting interfaces personalized for each set of users. Dynamic per user harnesses around LLM’s haven’t been adopted widely yet, but this is the area that Relayer is progressing quickly on. The previous generation of harnesses (google, instagram, etc) is a good starting point for how to use harnesses for personalized recommendations.</p>
-  <p>Large scale consumer systems allocate the creatives on their application using ML models powered by counts and personalized data. User interactions are used as signals to build a vector representation that proxy that user's preferences. Counts data is the aggregation of user interactions across all the users on a platform and used as a signal for ranking candidates. (<a href="https://www.linkedin.com/blog/engineering/feed/engineering-the-next-generation-of-linkedins-feed#:~:text=One%20of%20our%20most%20important,such%20to%20any%20given%20member">LinkedIn feed engineering reference</a>) At scale and with fast data updates this acts as a proxy for content quality or relevance. Fast data updates is what unlocks search results and timelines to react to real life events and the user preference vector allows your search results or instagram recommendations to “predict” what you want to see. These systems rely on their scale and simple signals like clicks to personalize their application for consumers.</p>
-  <p>Sufficient data and discrete feedback signals were a requirement that prevented many consumer applications from becoming personalized. LLMs make it possible to get clear insights with orders of magnitude less data, as LLM’s are trained on the sum of all the content in the internet. They also make text feedback from the user viable as an actionable signal. Consumer applications can now use screenshots, videos, text feedback and interaction timelines as the traces that an outer meta-harness loop uses to propose the next version of the harness. User data now becomes the trace signals to improve the harness.</p>
-  <p>Speed of evolution and a suitable quality function are the biggest challenges in the auto improving interfaces I have been building for Relayer. An overhead of 5+ minutes for the iterating on dynamic harness hurts user engagement. Each iteration requires going through the previous traces using a recursive language model (DSPy.RLM), proposing different evolutions and evaluating them before they get pushed to the user. The quality functions for the dynamic interface to ensure the basic functionality, task completeness, user task velocity, short term task quality and long term task quality. This requires its own article to dive deep into and it has been providing the biggest value gain for the Relayer product so far.</p>
-  <p>Also here are 2 mocks of auto improving harnesses that I’m working on. They are prototypes for how the Relayer harness will evolve around optimizing the user/users task.</p>
-  <p><a href="https://doclayer-one.vercel.app/mocks/">https://doclayer-one.vercel.app/mocks/</a></p>
-  <p><a href="https://meta-ide-workspace-mocks-20260513.vercel.app/">https://meta-ide-workspace-mocks-20260513.vercel.app/</a></p>
+  <p>Large-scale consumer systems allocate content using ML models powered by aggregate counts and per-user data. User interactions become a vector representation that proxies that user&rsquo;s preferences. Counts data aggregates interactions across all users and acts as a signal for ranking candidates<sup><a href="#ref-4">4</a></sup>. At scale, with fast updates, this acts as a proxy for content quality or relevance. Fast updates are what let search results and timelines react to real-world events; the user preference vector is what lets the system predict what you want to see. These systems lean on scale and simple signals like clicks to personalize the product for consumers.</p>
+  <p>Sufficient data and discrete feedback signals were the requirements that kept many consumer applications from becoming personalized. LLMs make it possible to get clear insights with orders of magnitude less data because they are trained on the sum of the public internet. They also turn text feedback into an actionable signal. Consumer applications can now use screenshots, videos, text feedback, and interaction timelines as the traces an outer meta-harness loop uses to propose the next version of the harness. User data becomes the trace signal that improves the harness.</p>
+  <details class="formal-lens">
+    <summary><span class="formal-lens-kicker">Formal lens</span><span class="formal-lens-title">From ranking personalization to harness personalization</span></summary>
+    <div class="formal-lens-body">
+      <div>Classic personalization estimates a user vector <code>u</code> and ranks candidates against it. A self-improving harness can instead evolve a user- or group-specific harness state:</div>
+      <pre><code>theta_{u,t+1} = update(theta_{u,t}, tau_{u,&lt;=t}, feedback_u)</code></pre>
+      <div>The difference is material. The system is not only changing which content appears; it can change what gets stored, how retrieval works, which tools are exposed, how results are validated, and what interface is generated for the next task.</div>
+    </div>
+  </details>
+  <h2>What still needs to work</h2>
+  <p>Speed of evolution and a suitable quality function are the two biggest open problems in the auto-improving interfaces I have been building for Relayer. A five-plus minute overhead on iterating the dynamic harness hurts user engagement. Each iteration walks through prior traces with a recursive language model (DSPy.RLM), proposes different evolutions, and evaluates them before pushing to the user. The quality functions for a dynamic interface have to cover basic functionality, task completeness, task velocity, short-term task quality, and long-term task quality. That deserves its own essay; it has been the largest source of value for Relayer so far.</p>
+  <details class="formal-lens">
+    <summary><span class="formal-lens-kicker">Formal lens</span><span class="formal-lens-title">The bottleneck is <code>Q</code></span></summary>
+    <div class="formal-lens-body">
+      <div>The hard part is defining a quality function that is strong enough to guide evolution without optimizing the wrong behavior.</div>
+      <pre><code>Q = w_func F
+  + w_done D
+  + w_velocity V
+  + w_short S
+  + w_long G
+  - w_latency L
+  - w_cost C
+  - w_risk R</code></pre>
+      <div>For a dynamic interface, the evaluator has to score basic functionality, task completion, user velocity, short-term output quality, long-term user outcome, latency, cost, and product risk before a candidate harness is trusted in front of the user.</div>
+    </div>
+  </details>
+  <p>Two prototypes for how the Relayer harness will evolve around a user&rsquo;s task: DocLayer<sup><a href="#ref-5">5</a></sup> and the Meta IDE workspace<sup><a href="#ref-6">6</a></sup>.</p>
 </section>

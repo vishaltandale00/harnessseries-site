@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { EssayColophon } from "@/components/EssayColophon";
 import { PretextArticle } from "@/components/PretextArticle";
 import { ReferenceRail } from "@/components/ReferenceRail";
-import { SystemDiagram } from "@/components/SystemDiagram";
-import { getPost, getPostSlugs } from "@/lib/posts";
+import { getPost, getPostSlugs, getPosts } from "@/lib/posts";
 
 type PostPageProps = {
   params: Promise<{
@@ -40,38 +40,60 @@ export default async function PostPage({ params }: PostPageProps) {
     notFound();
   }
 
+  const allPosts = await getPosts();
+  const related = post.relatedSlugs
+    .map((s) => allPosts.find((p) => p.slug === s))
+    .filter((p): p is NonNullable<typeof p> => Boolean(p));
+
+  const dateShort = new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(`${post.date}T00:00:00`));
+
   return (
-    <main className="article-shell">
+    <main
+      className="article-shell"
+      style={{ ["--essay-accent" as string]: post.accent }}
+    >
       <Link className="back-link" href="/">
-        Archive
+        Harness Series &middot; Archive
       </Link>
 
       <article>
         <header className="article-header">
-          <p className="eyebrow">Harness Series</p>
-          <h1>{post.title}</h1>
-          <div className="article-meta">
-            <time dateTime={post.date}>
-              {new Intl.DateTimeFormat("en", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-              }).format(new Date(`${post.date}T00:00:00`))}
-            </time>
-          </div>
-          <div className="topic-row">
-            {post.topics.map((topic) => (
-              <span key={topic}>{topic}</span>
-            ))}
-          </div>
+          <p className="department" data-issue={post.issue}>
+            <span className="department-issue">{post.issue}</span>
+            <span className="department-sep" aria-hidden="true">/</span>
+            <span className="department-name">{post.department}</span>
+            <span className="department-sep" aria-hidden="true">/</span>
+            <time dateTime={post.date}>{dateShort}</time>
+          </p>
+          <h1 id="lede">{post.title}</h1>
+          <p className="article-dek">{post.summary}</p>
+          <p className="byline">
+            <span className="byline-by">By</span>{" "}
+            <span className="byline-name">{post.author.name}</span>
+            {post.author.affiliation ? (
+              <>
+                {" "}
+                <span className="byline-affil">
+                  &middot; {post.author.affiliation}
+                </span>
+              </>
+            ) : null}
+          </p>
         </header>
 
-        <SystemDiagram variant={post.diagram} />
-
         <div className="article-grid">
-          <PretextArticle html={post.html} />
-          <ReferenceRail references={post.references} />
+          <PretextArticle html={post.html} references={post.references} />
+          <ReferenceRail
+            references={post.references}
+            citations={post.structure.citations}
+          />
         </div>
+
+        <EssayColophon post={post} related={related} />
       </article>
     </main>
   );

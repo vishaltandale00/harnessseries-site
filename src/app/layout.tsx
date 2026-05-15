@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     template: "%s | Harness Series",
   },
   description:
-    "A research-journal-style publication about harnesses, agents, traces, memory, retrieval, and software systems around models.",
+    "A research journal about the software layer that turns model intelligence into product behavior — harnesses, agents, traces, memory, retrieval, and the systems around models.",
 };
 
 export default function RootLayout({
@@ -22,9 +22,14 @@ export default function RootLayout({
       <body>
         <header className="site-header">
           <Link className="site-mark" href="/">
-            Harness Series
+            <span className="site-mark-glyph" aria-hidden="true">
+              §
+            </span>
+            <span className="site-mark-text">Harness Series</span>
           </Link>
-          <p>Systems around intelligence</p>
+          <p className="site-tagline">
+            The software layer around model intelligence
+          </p>
         </header>
         {children}
       </body>
