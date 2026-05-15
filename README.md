@@ -1,14 +1,28 @@
 # Harness Series Site
 
-A website for collecting links to Harness Series Substack posts and reading those posts inside the site.
+A standalone research-journal-style website for Harness Series essays about the software layer around model intelligence: harnesses, agents, traces, memory, retrieval, and self-improving interfaces.
 
-## Initial Direction
+## Local Development
 
-- List Substack posts in a browsable index.
-- Link out to the original Substack posts.
-- Provide an in-site reading view for posts.
-- Leave room for design exploration before choosing the final stack and structure.
+```bash
+npm install
+npm run dev
+```
 
-## Status
+Open `http://localhost:3000`.
 
-Repository initialized. Site design and implementation will be planned next.
+## Build
+
+```bash
+npm run build
+```
+
+## Content
+
+- Raw drafts live in `content/drafts`.
+- Renderable article HTML lives in `content/posts`.
+- Post metadata and references are loaded from `src/lib/posts.ts`.
+
+## Deployment
+
+The project is configured for Vercel through `vercel.json` and can be deployed as a standard Next.js application.
