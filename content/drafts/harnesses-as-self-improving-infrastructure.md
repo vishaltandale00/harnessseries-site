@@ -3,19 +3,25 @@
 A harness is the system that turns model intelligence into product behavior. Formally, LLM harnesses are "the code that determines what to store, retrieve and show to the model" ([Meta-Harness](https://arxiv.org/abs/2603.28052)). The term is a more precise alternative to "GPT wrapper," but harnesses around models existed long before GPT-2 ([LangChain](https://www.langchain.com/blog/the-anatomy-of-an-agent-harness)).
 
 <details class="formal-lens">
-<summary>Formal lens: A harness as executable composition</summary>
+<summary>Formal lens: Definitions of M and H</summary>
 
-Let the available models be `M = {M_0, ..., M_k}`. A harness is an executable composition `H_theta = (h_context, h_memory, h_retrieve, h_tool, h_verify, h_ui)` whose subcomponents decide what the model can see, remember, call, validate, and render.
+The most basic split is not "AI code" versus "ordinary code." It is mathematical function versus product software.
+
+`M_i`: A model is any mathematical function the product can call. It can be as small as `y = ax + b`, a calibrated score, an embedding function, a bandit, a deep ranker, or an LLM.
+
+`H_j`: A harness component is any software in the product system: data lookup, business logic, validation, routing, orchestration, rendering, logging, policy, or process control.
+
+`H(M)`: The product behavior produced when harness components compose around one or more model functions.
 
 ```text
-c_t   = h_context(s_t, tau_<t)
-m_t   = h_model(s_t, tau_<t)
-y_t   = M_{m_t}(c_t)
-a_t   = h_route(y_t, s_t)
-tau_t = tau_<t + {(s_t, c_t, m_t, y_t, a_t)}
+M_i : X_i -> Y_i
+H_j : product_state x data x rules x model_outputs -> product_state
+
+H = H_n o ... o H_1 o H_0
+Y = H(x; M, data, rules)
 ```
 
-The product behavior is therefore not a property of `M` alone. It is the induced policy of the coupled system `(H_theta, M)`.
+The model returns a value. The harness decides where the value came from, whether it is allowed, how it is combined with other state, what the user sees, and what trace is recorded for the next improvement loop.
 
 </details>
 
@@ -23,14 +29,95 @@ The product behavior is therefore not a property of `M` alone. It is the induced
 
 Systems like Google search, Instagram, and LinkedIn are harnesses around recommendation and ranking models ([Google ranking systems reference](https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/45530.pdf)). The models underneath are split into many specialized submodels: encoding a query into an embedding, retrieving results based on the query plus user preferences, reranking those results to prune downstream computation, stitching together content most likely to hold attention, ranking and auctioning that content given the context of what else is on the page, and finally generating an interface around the selected set.
 
+<figure class="figure-block rec-harness-figure" id="fig-1" aria-labelledby="fig-1-cap">
+  <div class="rec-harness-card" role="img" aria-label="A recommendation system shown as nested harnesses for retrieval, generation, ranking, and allocation, with sub-harnesses calling model functions">
+    <div class="rec-harness-equations">
+      <code>H_rec = H_3 o H_2 o H_1 o H_0</code>
+      <span>Each macro harness <code>H_i</code> decomposes into sub-harnesses <code>H_i.0...H_i.3</code>. Model calls <code>M_i.*</code> sit inside those software components.</span>
+    </div>
+    <div class="rec-harness-flow">
+      <span><code>H_0</code> Retrieval <em>C_t</em></span>
+      <span><code>H_1</code> Generation <em>K_t</em></span>
+      <span><code>H_2</code> Ranking <em>S_t</em></span>
+      <span><code>H_3</code> Allocation <em>Y_t</em></span>
+    </div>
+    <div class="rec-harness-grid">
+      <div class="rec-stage" data-stage="retrieval">
+        <div class="rec-stage-head"><code>H_0</code><strong>Retrieval Harness</strong><small>request -> candidate set</small></div>
+        <div class="rec-subgrid">
+          <div class="rec-sub"><span>H_0.0</span><strong>Request frame</strong><small>M_0.0 query rewrite</small></div>
+          <div class="rec-sub"><span>H_0.1</span><strong>Retrieval fanout</strong><small>M_0.1 exact, M_0.2 variants, M_0.3 semantic</small></div>
+          <div class="rec-sub"><span>H_0.2</span><strong>Eligibility filter</strong><small>M_0.4 relevance, M_0.5 risk</small></div>
+          <div class="rec-sub"><span>H_0.3</span><strong>Prune + pack</strong><small>M_0.6 cheap ranker</small></div>
+        </div>
+      </div>
+      <div class="rec-stage" data-stage="generation">
+        <div class="rec-stage-head"><code>H_1</code><strong>Generation Harness</strong><small>candidates -> content variants</small></div>
+        <div class="rec-subgrid">
+          <div class="rec-sub"><span>H_1.0</span><strong>Asset lookup</strong><small>M_1.0 template fit</small></div>
+          <div class="rec-sub"><span>H_1.1</span><strong>Validation gates</strong><small>M_1.1 copy policy</small></div>
+          <div class="rec-sub"><span>H_1.2</span><strong>Input reducer</strong><small>M_1.2 content relevance</small></div>
+          <div class="rec-sub"><span>H_1.3</span><strong>Allocate / generate</strong><small>M_1.3 bandit, M_1.4 sequence, M_1.5 LLM copy</small></div>
+        </div>
+      </div>
+      <div class="rec-stage" data-stage="ranking">
+        <div class="rec-stage-head"><code>H_2</code><strong>Ranking Harness</strong><small>variants -> scored set</small></div>
+        <div class="rec-subgrid">
+          <div class="rec-sub"><span>H_2.0</span><strong>Metadata join</strong><small>M_2.0 feature transforms</small></div>
+          <div class="rec-sub"><span>H_2.1</span><strong>Feature builder</strong><small>M_2.1 embedding join</small></div>
+          <div class="rec-sub"><span>H_2.2</span><strong>Heavy scorers</strong><small>M_2.2 CTR, M_2.3 relevance, M_2.4 value</small></div>
+          <div class="rec-sub"><span>H_2.3</span><strong>Calibration</strong><small>M_2.5 score calibration</small></div>
+        </div>
+      </div>
+      <div class="rec-stage" data-stage="allocation">
+        <div class="rec-stage-head"><code>H_3</code><strong>Allocation Harness</strong><small>scores -> rendered page</small></div>
+        <div class="rec-subgrid">
+          <div class="rec-sub"><span>H_3.0</span><strong>Surface frame</strong><small>M_3.0 surface prior</small></div>
+          <div class="rec-sub"><span>H_3.1</span><strong>Auction runner</strong><small>M_3.1 auction value</small></div>
+          <div class="rec-sub"><span>H_3.2</span><strong>Layout search</strong><small>M_3.2 layout, M_3.3 experience</small></div>
+          <div class="rec-sub"><span>H_3.3</span><strong>Render + trace</strong><small>M_3.4 policy suppressor</small></div>
+        </div>
+      </div>
+    </div>
+    <div class="rec-trace"><code>tau_t</code><span>Trace: request, candidates, generated variants, scores, allocation, rendering, and feedback become the next layer of data, rules, and model updates.</span></div>
+  </div>
+  <figcaption id="fig-1-cap"><span class="figure-num">Fig.&nbsp;1</span> A recommendation product as nested harnesses. The model functions score, transform, retrieve, or generate; the harness components decide what data exists, which rules apply, how outputs compose, and what becomes product behavior. <a href="/recommendation-harness">Open the full diagram</a>.</figcaption>
+</figure>
+
 These submodels share embeddings, pass hidden layers downstream into later models like RNNs, and sit inside an intricate harness that has to return results in well under a second. Internally they were called infrastructure, and teams of hundreds maintained them to make the product faster, higher quality, more personalized, cheaper to serve, and compliance-safe. The underlying models were proprietary; the harnesses around them were a meaningful piece of the moat. OpenAI changed that paradigm by exposing frontier intelligence through an API, which let anyone build intelligent systems on top and turned the surrounding infrastructure into the most interesting layer to discuss.
 
 <details class="formal-lens">
-<summary>Formal lens: Recommendation infrastructure as H_rec</summary>
+<summary>Formal lens: Recommendation infrastructure as nested H_rec(M)</summary>
 
-The recommendation stack is an older instance of the same shape: `H_rec = h_embed -> h_retrieve -> h_rerank -> h_auction -> h_render`. Each stage may call a different model `M_i`, but the user experiences the composed behavior of the harness.
+This is the same structure as Fig. 1. A recommendation stack is a harness of harnesses: the top-level product harness composes retrieval, generation, ranking, and allocation, and each stage is itself made from smaller harness components that call model functions at specific points.
 
-The relevant objective is multi-term: maximize relevance and revenue while satisfying latency, serving cost, policy, and compliance constraints. The moat was not only the private weights; it was the infrastructure that composed many models into one fast product surface.
+`H_0`: Retrieval harness: gather candidates, expand queries, filter obvious failures, and produce `C_t`.
+
+`H_1`: Generation harness: fetch assets, validate content, allocate or generate variants, and produce `K_t`.
+
+`H_2`: Ranking harness: join metadata, build features, call heavier scorers, calibrate scores, and produce `S_t`.
+
+`H_3`: Allocation harness: run marketplace and surface rules, search layout permutations, render the page, and produce `Y_t`.
+
+```text
+H_rec = H_3 o H_2 o H_1 o H_0
+
+H_0 = H_0.3 o H_0.2 o H_0.1 o H_0.0
+H_1 = H_1.3 o H_1.2 o H_1.1 o H_1.0
+H_2 = H_2.3 o H_2.2 o H_2.1 o H_2.0
+H_3 = H_3.3 o H_3.2 o H_3.1 o H_3.0
+
+C_t = H_0(q_t, u_t, state_t; M_0.*)
+K_t = H_1(C_t, content_store_t, rules_t; M_1.*)
+S_t = H_2(K_t, metadata_t, counts_t; M_2.*)
+Y_t = H_3(S_t, auction_t, surface_t; M_3.*)
+
+tau_t = log(q_t, C_t, K_t, S_t, Y_t)
+```
+
+This is the point of the analogy: the product can evolve from keyword lookup, to learned retrieval, to embeddings, to deep ranking, to LLM-assisted generation while much of the surrounding harness shape remains recognizable. The durable asset is not one model call; it is the composed product system that knows how to use model outputs.
+
+[Open the nested recommendation harness diagram](/recommendation-harness)
 
 </details>
 
@@ -43,13 +130,14 @@ Architecturally, the model still uses next-token prediction to learn patterns ac
 <details class="formal-lens">
 <summary>Formal lens: Why a fixed harness trains well</summary>
 
-In the static-harness regime, `theta` is mostly fixed while model weights, system prompts, tools, and post-training data move around it. The optimization target is closer to:
+In the static-harness regime, the product software `H` is mostly fixed while the model family, prompts, tools, and post-training data improve around that stable interface.
 
 ```text
-max_phi  E[ Q(tau(H_theta, M_phi, x)) ]
+given fixed H
+M* = argmax_{M in model_family} E[ Q(tau(H(x; M))) ]
 ```
 
-Because `H_theta` is stable, training data, on-policy traces, and judge behavior stay comparable across runs. The model can learn the habits of that particular interface: when tools appear, what traces look like, how context is packed, and what counts as a successful terminal state.
+Because `H` is stable, traces stay comparable across runs. The model can learn the habits of that product harness: what context is packed, which tools appear, how actions are validated, and what terminal states count as success.
 
 </details>
 
@@ -60,18 +148,20 @@ A recent paper on meta-harnesses proposes that letting a model optimize the harn
 Autonomously improving harnesses change the paradigm of user-facing applications: from fixed general interfaces with a fringe of customizations, to interfaces that adapt per user. Dynamic per-user harnesses around LLMs have not been widely adopted yet, but this is the area Relayer is moving on quickly. The previous generation of harnesses -- Google, Instagram, and so on -- is a good reference for what personalized harnesses can look like.
 
 <details class="formal-lens">
-<summary>Formal lens: Moving search from phi to theta</summary>
+<summary>Formal lens: Moving search from M to H</summary>
 
-A meta-harness treats the harness parameters as the search space. Instead of only asking which model weights `phi` perform best, it asks which harness `theta` makes a fixed or changing model system perform best.
+A meta-harness treats product software as the search space. Instead of only asking which model function performs best inside a fixed product, it asks which harness composition should surround the model.
 
 ```text
-theta* = argmax_theta E[ Q(tau(H_theta, M, x)) ]
-         - lambda_cost C(H_theta)
-         - lambda_lat  L(H_theta)
-         - lambda_risk R(H_theta)
+H* = argmax_H E[ Q(tau(H(x; M))) ]
+     - lambda_cost C(H)
+     - lambda_latency L(H)
+     - lambda_risk R(H)
+
+H_{t+1} = improve(H_t, tau_<=t, Q)
 ```
 
-The outer loop proposes candidate harnesses from source code, prior scores, and execution traces. The important shift is that retrieval policy, memory policy, tool routing, validation, and interface shape become optimizable objects.
+The outer loop proposes changes to retrieval policy, memory policy, tool routing, validation, prompts, layout, and interface behavior. In this view, code and process around the model become optimizable infrastructure.
 
 </details>
 
@@ -82,10 +172,11 @@ Sufficient data and discrete feedback signals were the requirements that kept ma
 <details class="formal-lens">
 <summary>Formal lens: From ranking personalization to harness personalization</summary>
 
-Classic personalization estimates a user vector `u` and ranks candidates against it. A self-improving harness can instead evolve a user- or group-specific harness state:
+Classic personalization changes scores inside a mostly fixed harness. A self-improving product can instead maintain a user- or group-specific harness state.
 
 ```text
-theta_{u,t+1} = update(theta_{u,t}, tau_{u,<=t}, feedback_u)
+H_{u,t+1} = update(H_{u,t}, tau_{u,<=t}, feedback_u, Q)
+Y_{u,t}   = H_{u,t}(x_t; M, data, rules)
 ```
 
 The difference is material. The system is not only changing which content appears; it can change what gets stored, how retrieval works, which tools are exposed, how results are validated, and what interface is generated for the next task.
@@ -99,7 +190,7 @@ Speed of evolution and a suitable quality function are the two biggest open prob
 <details class="formal-lens">
 <summary>Formal lens: The bottleneck is Q</summary>
 
-The hard part is defining a quality function that is strong enough to guide evolution without optimizing the wrong behavior.
+Once `H` can change, the quality function becomes the governor. It has to score product behavior, not just model output.
 
 ```text
 Q = w_func F
