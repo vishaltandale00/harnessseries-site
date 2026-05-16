@@ -120,6 +120,11 @@ const postMetadata: PostMeta[] = [
         href: "https://meta-ide-workspace-mocks-20260513.vercel.app/",
         kind: "demo",
       },
+      {
+        label: "OpenAI — Introducing GPT-5.3-Codex",
+        href: "https://openai.com/index/introducing-gpt-5-3-codex/",
+        kind: "source",
+      },
     ],
   },
   {
@@ -133,7 +138,7 @@ const postMetadata: PostMeta[] = [
     htmlPath: "content/posts/autonomous-harness-engineering.html",
     htmlFile: "autonomous-harness-engineering.html",
     accent: "#8a2a1f",
-    author: { name: "Vishal Tandale", affiliation: "Founder, Relayerlabs.ai" },
+    author: { name: "Akhil Ramaswamy" },
     thanks: [],
     issue: "I.01",
     department: "Field Notes",
